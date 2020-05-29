@@ -1,0 +1,19 @@
+6 rooms (idx 1..6)
+1 central room (idx 0)
+room \in 0..6
+active \in 1..6
+known_idx \in 1..6
+known type bool
+pos \in 0..6
+
+SYS_ Safety:
+/\  (pos' != pos)
+/\  (pos >= 1 /\ pos =< 6) => pos'= 0
+/\  (pos = 0) => (pos' >= 1 /\ pos' =< 6)
+/\  (pos = active) => (known'=TRUE /\ known_idx'=pos)
+/\  (pos != active) => (known'=FALSE /\ known_idx'=0)
+/\  (known=TRUE) => (pos' = known_idx)
+
+ENV_Safety:
+/\  (active' = active) \/ (active' \in 1..6)
+
