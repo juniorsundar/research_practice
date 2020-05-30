@@ -1,0 +1,26 @@
+[INPUT]
+active:1...6
+known_idx:1...6
+known
+pos:0...6
+
+[OUTPUT]
+
+[ENV_INIT]
+active = 1
+
+[SYS_INIT]
+pos = 0
+known_idx = 1
+known
+
+[SYS_TRANS]
+pos' != pos
+(pos >= 1 & pos <= 6) -> (pos'= 0)
+(pos = 0) -> (pos' >= 1 & pos' <= 6)
+(pos = active) -> known' & known_idx'=pos
+(pos != active) -> (! known' & known_idx'=0)
+(known) -> (pos' = known_idx)
+
+[ENV_TRANS]
+(active' = active) | (active' != active)
