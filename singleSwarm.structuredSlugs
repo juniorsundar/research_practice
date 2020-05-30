@@ -1,26 +1,28 @@
 [INPUT]
 active:1...6
-known_idx:1...6
-known
-pos:0...6
 
 [OUTPUT]
+known_room:0...6
+known:0...1
+pos:0...6
 
 [ENV_INIT]
 active = 1
 
 [SYS_INIT]
-pos = 0
-known_idx = 1
-known
+pos = 1
+known_room = 0
+known = 0
 
 [SYS_TRANS]
-pos' != pos
-(pos >= 1 & pos <= 6) -> (pos'= 0)
-(pos = 0) -> (pos' >= 1 & pos' <= 6)
-(pos = active) -> known' & known_idx'=pos
-(pos != active) -> (! known' & known_idx'=0)
-(known) -> (pos' = known_idx)
+(((pos = 0) & (pos' >0)) | ((pos >0) & (pos' = 0)))
+(((pos = active) & (known'=1 & known_room'=pos)) | ((pos != active) & (known'=0 & known_room'=0)))
+((known = 1) -> (pos' = known_room))
 
 [ENV_TRANS]
-(active' = active) | (active' != active)
+active'>0
+
+[ENV_LIVENESS]
+
+
+[SYS_LIVENESS]
