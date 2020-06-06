@@ -7,38 +7,40 @@ import networkx as nx
 
 aut = trl.Automaton()
 MAX_ROOMS = 2
-aut.declare_variables(active=(1, MAX_ROOMS), known_room=(0, MAX_ROOMS), pos=(0, MAX_ROOMS), known=(0,1))
-aut.varlist['env']=['active']
-aut.varlist['sys']=['known_room','known','pos']
+aut.declare_variables(active1='bool',active2='bool', home = 'bool',known_room=(0, MAX_ROOMS), pos=(0, MAX_ROOMS), known='bool')
+aut.varlist['env']=['active1','active2']
+aut.varlist['sys']=['known_room','known','pos','home']
 aut.prime_varlists()
 
 aut.init['env'] = '''
-    active = 1
+    /\ active1
+    /\ ~active2
     '''
 aut.init['sys'] = '''
     /\ pos = 0
+    /\ home
     /\ known_room = 1
-    /\ known=1
+    /\ known
     '''
 
 aut.action['sys'] = '''
+    /\ home <=> pos = 0
+    /\ ~home => (~ home')
+    /\ home => (~ home')
     (* inversion with one-step delay *)
 
-    /\  \/ ((pos = active) /\ (known'=1) /\ known_room' = pos)
-        \/ ((pos != active) /\ (known'=0) /\ known_room' != pos)
-    
-    /\  \/ known = 1 /\ pos' = known_room /\ pos' != 0
-        \/ known = 0 /\ pos' != known_room
-    /\  \/ pos = 0 /\ pos' != 0
-        \/ pos != 0 /\ pos' = 0
-
+    /\ ((pos = 1 /\ active1) => (known') /\ known_room' = 1)
+    /\ ((pos = 2 /\ active2) => (known') /\ known_room' = 2)
+    /\ ~home => ~known
+    /\ known /\ known_room = 1 => pos' = 1
+    /\ known /\ known_room = 2 => pos' = 2
     '''
 
 aut.action['env'] = '''
-    /\ active != 0
+    /\ active1 <=> ~active2
     '''
-aut.win['<>[]'] = aut.bdds_from("known = 1")
-aut.win['[]<>'] = aut.bdds_from('known = 1')
+aut.win['<>[]'] = aut.bdds_from('active1')
+aut.win['[]<>'] = aut.bdds_from('home')
 aut.qinit = '\E \A'
 aut.moore = True
 aut.plus_one = True

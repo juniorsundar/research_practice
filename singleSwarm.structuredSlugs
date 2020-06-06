@@ -1,10 +1,10 @@
 [INPUT]
-active:1...6
+active:1...3
 
 [OUTPUT]
-known_room:0...6
+known_room:0...3
 known:0...1
-pos:0...6
+pos:0...3
 
 [ENV_INIT]
 active = 1
@@ -15,14 +15,15 @@ known_room = 0
 known = 0
 
 [SYS_TRANS]
-(((pos = 0) & (pos' >0)) | ((pos >0) & (pos' = 0)))
-(((pos = active) & (known'=1 & known_room'=pos)) | ((pos != active) & (known'=0 & known_room'=0)))
-((known = 1) -> (pos' = known_room))
+( ( (pos = active) & (known'=1 & known_room'=pos) ) | ( (pos != active) & (known' = 0 & known_room' != 0) ) )
+( ( (known = 1) & (pos' = known_room) ) | ( (known = 0) & ( (pos' != known_room) ) ) )
 
 [ENV_TRANS]
-active'>0
+active > 0
+active' != active
+active' > 0
 
 [ENV_LIVENESS]
 
-
 [SYS_LIVENESS]
+
