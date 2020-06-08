@@ -27,14 +27,15 @@ if ROOMS>2:
             env_init.add("!active{roomN}".format(roomN=i))
 
         ands = ' && '
-        text = "active{roomN} -> ".format(roomN=i)
+        text = text + "( active{roomN} && ".format(roomN=i)
         for j in range(1,ROOMS+1):
             if j==i:
                 continue
             text = text + "!active{roomN}".format(roomN=j)
             text = text + ands
-        env_safe.add(text[0:-4])
+        text = text[0:-4] + " ) || "
         env_prog.add("active{roomN}".format(roomN=i))
+    env_safe.add(text[0:-4])
 else:
     env_vars = {'active1','active2'}
     env_init = {'active1','!active2'}
