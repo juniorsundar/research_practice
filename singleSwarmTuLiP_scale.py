@@ -8,32 +8,58 @@ from tulip.transys import machines
 
 logging.basicConfig(level=logging.WARNING)
 
-env_vars = {'active1','active2','active3'}
-env_init = {'active1','!active2','!active3'}
-env_safe = {'(active1 -> !active2 && !active3)',
-            '(active2 -> !active1 && !active3)',
-            '(active3 -> !active1 && !active2)'}
-env_prog = {'active1','active2','active3'}
+ROOMS = 3
 
-sys_vars = {'room':(0,3),'known_room':(0,3),'home':"boolean",'known':"boolean"}
+env_vars = set()
+env_init = set()
+env_safe = set()
+env_prog = set()
+
+#Environment Assumptions
+if ROOMS>2:
+    text = ""
+    for i in range(1,ROOMS+1):
+        env_vars.add("active{roomN}".format(roomN=i))
+        
+        if i==1:
+            env_init.add("active{roomN}".format(roomN=i))
+        else:
+            env_init.add("!active{roomN}".format(roomN=i))
+
+        ands = ' && '
+        text = "active{roomN} -> ".format(roomN=i)
+        for j in range(1,ROOMS+1):
+            if j==i:
+                continue
+            text = text + "!active{roomN}".format(roomN=j)
+            text = text + ands
+        env_safe.add(text[0:-4])
+        env_prog.add("active{roomN}".format(roomN=i))
+else:
+    env_vars = {'active1','active2'}
+    env_init = {'active1','!active2'}
+    env_safe = {'active1 <-> !active2'}
+    env_prog = {'active1','active2'}
+
+#System Guarantees
+sys_vars = {'room':(0,ROOMS),'known_room':(0,ROOMS),'home':"boolean",'known':"boolean"}
 sys_init = {'home', 'room = 0', '!known', 'known_room = 0'}
 sys_safe = {
     'home -> X (!home)',
     'home <-> room = 0',
-    '!home && X known -> X home',
+    '!home && X known -> X home'
+}
 
-    '!home && room = 1 && active1 -> X (known && known_room = 1)',
-    'home && known && known_room = 1 -> X (known && known_room = 1 && room = 1)',
-    '!home && (room = 1 && !active1) -> X (!known && known_room = 0 && room = 2)',
-
-    '!home && room = 2 && active2 -> X (known && known_room = 2)',
-    'home && known && known_room = 2 -> X (known && known_room = 2 && room = 2)',
-    '!home && (room = 2 && !active2) -> X (!known && known_room = 0 && room = 3)',
-
-    '!home && room = 3 && active3 -> X (known && known_room = 3)',
-    'home && known && known_room = 3 -> X (known && known_room = 3 && room = 3)',
-    '!home && (room = 3 && !active3) -> X (!known && known_room = 0 && room = 1)'
-    }
+for i in range(1,ROOMS+1):
+    line1 = '!home && room = {roomN} && active{roomN} -> X (known && known_room = {roomN})'.format(roomN=i)
+    line2 = 'home && known && known_room = {roomN} -> X (known && known_room = {roomN} && room = {roomN})'.format(roomN=i)
+    if i<ROOMS:
+        line3 = '!home && (room = {roomN} && !active{roomN}) -> X (!known && known_room = 0 && room = {NroomN})'.format(roomN=i,NroomN=i+1)
+    else:
+        line3 = '!home && (room = {roomN} && !active{roomN}) -> X (!known && known_room = 0 && room = {NroomN})'.format(roomN=i,NroomN=1)
+    sys_safe.add(line1)
+    sys_safe.add(line2)
+    sys_safe.add(line3)
 
 sys_prog = set()
 
