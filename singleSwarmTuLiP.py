@@ -18,13 +18,13 @@ sys_init = {'home', 'room = 0', '!known', 'known_room = 0'}
 sys_safe = {
     'home -> X (!home)',
     'home <-> room = 0',
+    '!home && X known -> X home',
     '!home && room = 1 && active1 -> X (known && known_room = 1)',
     'home && known && known_room = 1 -> X (known && known_room = 1 && room = 1)',
     '!home && room = 2 && active2 -> X (known && known_room = 2)',
     'home && known && known_room = 2 -> X (known && known_room = 2 && room = 2)',
     '!home && (room = 2 && !active2) -> X (!known && known_room = 0 && room = 1)',
-    '!home && (room = 1 && !active1) -> X (!known && known_room = 0 && room = 2)',
-    '!home && X known -> X home'
+    '!home && (room = 1 && !active1) -> X (!known && known_room = 0 && room = 2)'
     }
 
 sys_prog = set()
