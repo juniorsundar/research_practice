@@ -4,11 +4,10 @@ import logging
 
 from tulip import transys, spec, synth
 from tulip.transys import machines
-from omega import automata
 
 logging.basicConfig(level=logging.WARNING)
 
-ROOMS = 2
+ROOMS = 3
 
 env_vars = set()
 env_init = set()
@@ -75,10 +74,12 @@ specs.qinit = '\E \A'  # i.e., "there exist sys_vars: forall sys_vars"
 
 strategy = synth.synthesize(specs)
 assert strategy is not None, 'unrealizable'
-A = automata.Automaton(strategy)
-if not strategy.save('strategy_for_single_robot_scale.png'):
+
+if not strategy.save('game_states_tulip.pdf'):
     print(strategy)
 
 # simulate
 print(strategy)
 machines.random_run(strategy, N=10)
+
+# strategy.transitions.find('Sinit')

@@ -5,6 +5,8 @@ from omega.games.enumeration import action_to_steps
 from omega.symbolic import enumeration as sym_enum
 import networkx as nx
 
+import matplotlib.pyplot as plt
+
 aut = trl.Automaton()
 MAX_ROOMS = 2
 aut.declare_variables(active=(1,MAX_ROOMS), home = (0,1),known_room=(0, MAX_ROOMS), pos=(0, MAX_ROOMS), known=(0,1))
@@ -57,6 +59,44 @@ aut.prime_varlists()
 g = enum.action_to_steps(aut, 'env', 'impl', qinit=aut.qinit)
 h, _ = sym_enum._format_nx(g)
 pd = nx.drawing.nx_pydot.to_pydot(h)
-pd.write_pdf('game_states.pdf')
+pd.write_pdf('game_states_omega.pdf')
 
+active = 1
+activeR = -1
+room = 0
+roomR = 0
+current = 0
+while True:
+    plt.axis([-2,2,-3,4])
+    plt.plot([-.25,.25,.25,-.25,-.25],[-2,-2,2,2,-2],c='red')
+    plt.plot([-1.25,-.75,-.75,-1.25,-1.25],[-1,-1,1,1,-1],c=(0,0.5,1))
+    plt.plot([.75,1.25,1.25,.75,.75],[-1,-1,1,1,-1],c=(0.5,1,0))
 
+    # environment
+    plt.scatter([activeR],[0.5],c='green')
+    # system
+    plt.scatter([roomR],[-.5],c='blue')
+    plt.legend(['Home','Room 1','Room 2','Env. Player','Robot'])
+    plt.show()
+    # environment input
+    active = int(input("Environment's Next Step: "))
+    successors = list(g._succ[current].keys())
+    
+    if active == 1:
+        activeR = -1
+        for suc in successors:
+            if g._node.get(suc)['active'] == 1:
+                current = suc
+    elif active == 2:
+        activeR = 1
+        for suc in successors:
+            if g._node.get(suc)['active'] == 2:
+                current = suc
+    room = g._node.get(current)['pos']
+    print("Robot goes to room {}".format(room))
+    if room == 0:
+        roomR = 0
+    elif room == 1:
+        roomR = -1
+    elif room == 2:
+        roomR = 1          
