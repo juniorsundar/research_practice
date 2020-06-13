@@ -1,0 +1,3 @@
+copy paste two robots specifications
+scheduler.
+3 components.
