@@ -1,200 +1,208 @@
+#!/usr/bin/env python
+"""Synthesize two Moore implementations, and simulate their assembly."""
 from matplotlib import pyplot as plt
 from omega.games import gr1
 from omega.logic import syntax as stx
 from omega import steps
 from omega.symbolic import temporal as trl
-from omega.games import enumeration as enum
-from omega.games.enumeration import action_to_steps
-from omega.symbolic import enumeration as sym_enum
-
-import networkx as nx
-
-MAX_ROOMS = 2
-
-# def specify_component_1():
-#     global MAX_ROOMS
-#     aut = trl.Automaton()
-#     aut.players = ['sys1','env','scheduler']
-#     aut.declare_variables(active = (1,MAX_ROOMS), 
-#                           home1 = (0,1), 
-#                           known_room1 = (0, MAX_ROOMS), 
-#                           pos1 = (0, MAX_ROOMS), 
-#                           known1 = (0,1),
-#                           turn=(0,2))
-#     aut.varlist['scheduler']=['turn']
-#     aut.varlist['env']=['active']
-#     aut.varlist['sys1']=['known_room1','known1','pos1','home1']
-#     spec = r'''
-#     sys1Init == pos1 = 0 /\ home1 = 1 /\ known_room1 = 0 /\ known1 = 0
-    
-#     '''
-
-# def specify_component_2():
 
 
-# def specify_environment():
+def main():
+    """Synthesize two Moore components, assemble, and simulate them."""
+    # synthesize
+    foo_spec = specify_component_foo()
+    bar_spec = specify_component_bar()
+    synthesize_some_controller('bar', 'foo', foo_spec)
+    synthesize_some_controller('foo', 'bar', bar_spec)
+    # assemble
+    foo = steps.AutomatonStepper(foo_spec)
+    bar = steps.AutomatonStepper(bar_spec)
+    sch = steps.Scheduler(2)
+    asm = steps.Assembly()
+    asm.machines = dict(scheduler=sch, foo=foo, bar=bar)
+    # history
+    n_steps = 15
+    asm.init()
+    print(asm.state)
+    for _ in range(n_steps):
+        asm.step()
+        print(asm.state)
+    # plotting
+    plot_machines(asm)
+    plt.xlabel('behavior states')
+    plt.show()
 
 
+def specify_component_foo():
+    """Return temporal logic spec of component foo."""
+    aut = trl.Automaton()
+    aut.players = ['foo', 'bar', 'scheduler']
+    aut.declare_variables(active=(1,2), home = (0,1),known_room=(0, 2), pos=(0, 2), known=(0,1), turn=(0, 1))
+    aut.varlist['scheduler'] = ['turn']
+    aut.varlist['foo']=['active']
+    aut.varlist['bar']=['known_room','known','pos','home']
+    spec = r'''
+    FooInit == active = 1
+    BarInit ==
+    /\ pos = 0
+    /\ home = 1
+    /\ known_room = 0
+    /\ known = 0
 
-aut = trl.Automaton()
-aut.players = dict(env=1,sys1=2,sys2=3,scheduler=None)
-vrs = dict(active = (1,MAX_ROOMS), 
-           home1 = (0,1), 
-           known_room1 = (0, MAX_ROOMS), 
-           pos1 = (0, MAX_ROOMS), 
-           known1 = (0,1), 
-           home2 = (0,1), 
-           known_room2 = (0, MAX_ROOMS), 
-           pos2 = (0, MAX_ROOMS), 
-           known2 = (0,1),
-           t = (1,3))
-aut.declare_variables(**vrs)
-aut.varlist = dict(
-    env = ['active'],
-    sys1 = ['known_room1','known1','pos1','home1'],
-    sys2 = ['known_room2','known2','pos2','home2'],
-    scheduler = ['t']
-)
-s = r'''
-    UNCHANGED_env == active' = active
-
-    UNCHANGED_sys1 == 
-    /\ home1' = home1
-    /\ pos1' = pos1
-    /\ known1' = known1
-    /\ known_room1' = known_room1
-
-    UNCHANGED_sys2 == 
-    /\ home2' = home2
-    /\ pos2' = pos2
-    /\ known2' = known2
-    /\ known_room2' = known_room2
-
-    envInit == 
-    /\ active = 1
-
-    sys1Init ==
-    /\ pos1 = 0
-    /\ home1 = 1
-    /\ known_room1 = 0
-    /\ known1 = 0
-
-    sys2Init ==
-    /\ pos2 = 0
-    /\ home2 = 1
-    /\ known_room2 = 0
-    /\ known2 = 0
-
-    envTurn == t = 1
-    sys1Turn == t = 2
-    sys2Turn == t = 3
-
-    envInv ==
-    /\ (active \in 1..2)
-
-    sys1Inv ==
-    /\ (home1 = 1 <=> pos1 = 0)
-
-    sys2Inv ==
-    /\ (home2 = 1 <=> pos2 = 0)
-
-    envStep == 
-    /\ envTurn
+    FooNext ==
+    /\ active \in 1..2
     /\ active' \in 1..2
     /\ (active' = active \/ active' != active)
-
-    sys1Step ==
-    /\ sys1Turn
-    /\ (home1 = 1 => home1' = 0)
-    /\ (~(home1 = 0 /\ known1' = 1) \/ home1' = 1)
-    /\ (pos1' != pos1)
-
-    /\ (~(home1 = 0 /\ pos1 = 1 /\ active = 1) \/ (known1' = 1 /\ known_room1' = 1))
-    /\ (~(home1 = 0 /\ pos1 = 2 /\ active = 2) \/ (known1' = 1 /\ known_room1' = 2))
-
-    /\ (~(home1 = 1 /\ known1 = 1 /\ known_room1 = 1) \/ (known1' = 1 /\ known_room1' = 1 /\ pos1' = 1))
-    /\ (~(home1 = 1 /\ known1 = 1 /\ known_room1 = 2) \/ (known1' = 1 /\ known_room1' = 2 /\ pos1' = 2))
-
-    /\ (~(home1 = 0 /\ (pos1 = 2 /\ active != 2)) \/ (known1' = 0 /\ known_room1' = 0 /\ pos1' = 1))
-    /\ (~(home1 = 0 /\ (pos1 = 1 /\ active != 1)) \/ (known1' = 0 /\ known_room1' = 0 /\ pos1' = 2))
-
-    sys2Step ==
-    /\ sys2Turn
-    /\ (home2 = 1 => home2' = 0)
-    /\ (home2 = 1 <=> pos2 = 0)
-    /\ (~(home2 = 0 /\ known2' = 1) \/ home2' = 1)
-    /\ (pos2' != pos2)
-
-    /\ (~(home2 = 0 /\ pos2 = 1 /\ active = 1) \/ (known2' = 1 /\ known_room2' = 1))
-    /\ (~(home2 = 0 /\ pos2 = 2 /\ active = 2) \/ (known2' = 1 /\ known_room2' = 2))
-
-    /\ (~(home2 = 1 /\ known2 = 1 /\ known_room2 = 1) \/ (known2' = 1 /\ known_room2' = 1 /\ pos2' = 1))
-    /\ (~(home2 = 1 /\ known2 = 1 /\ known_room2 = 2) \/ (known2' = 1 /\ known_room2' = 2 /\ pos2' = 2))
-
-    /\ (~(home2 = 0 /\ (pos2 = 2 /\ active != 2)) \/ (known2' = 0 /\ known_room2' = 0 /\ pos2' = 1))
-    /\ (~(home2 = 0 /\ (pos2 = 1 /\ active != 1)) \/ (known2' = 0 /\ known_room2' = 0 /\ pos2' = 2))
-
-    envNext ==
-    /\ envInv
-    /\ \/ envStep
-       \/ UNCHANGED_env
-
-    sys1Next ==
-    /\ sys1Inv
-    /\ \/ sys1Step
-       \/ UNCHANGED_sys1
-
-    sys2Next ==
-    /\ sys2Inv
-    /\ \/ sys2Step
-       \/ UNCHANGED_sys2
+    /\ ((turn != 0) => (active' = active))
     
-    schedulerInit == (t = 1)
-    schedulerNext ==
-    /\ ((t = 1) => (t' = 2))
-    /\ ((t = 2) => (t' = 3))
-    /\ ((t = 3) => (t' = 1))
-    /\ (t \in 1..3)
-'''
+    UNCHANGED == 
+    /\ home' = home
+    /\ pos' = pos
+    /\ known' = known
+    /\ known_room' = known_room
 
-aut.define(s)
-aut.init.update(env='envInit',sys1='sys1Init',sys2='sys2Init',scheduler='schedulerInit')
-aut.action.update(env='envNext',sys1='sys1Next',sys2='sys2Next',scheduler='schedulerNext')
-aut.win['<>[]'] = aut.bdds_from('active=1 \/ active=2')
-aut.win['[]<>'] = aut.bdds_from('active=1 \/ active=2')
+    BarNext ==
+    /\ (home = 1 => home' = 0)
+    /\ (home = 1 <=> pos = 0)
+    /\ (~(home = 0 /\ known' = 1) \/ home' = 1)
+    /\ (pos' != pos)
 
-# aut.win = dict(env={'[]<>':aut.bdds_from('active=1 \/ active=2'),
-#                     '<>[]':aut.bdds_from('active=1 \/ active=2')},
-#                sys1={'[]<>':aut.bdds_from('pos 1 = 0'),
-#                      '<>[]':aut.bdds_from('pos1 = 0')},
-#                sys2={'[]<>':aut.bdds_from('pos2 = 0'),
-#                      '<>[]':aut.bdds_from('pos2 = 0')},
-#                scheduler={'[]<>':aut.bdds_from('t=1 \/ t=2 \/ t=3'),
-#                           '<>[]':aut.bdds_from('t=1 \/ t=2 \/ t=3')})
+    /\ (~(home = 0 /\ pos = 1 /\ active = 1) \/ (known' = 1 /\ known_room' = 1))
+    /\ (~(home = 0 /\ pos = 2 /\ active = 2) \/ (known' = 1 /\ known_room' = 2))
 
-aut.prime_varlists(['env','sys1','sys2','scheduler'])
-aut.qinit = '\E \A'
-aut.moore = True
-aut.plus_one = True
+    /\ (~(home = 1 /\ known = 1 /\ known_room = 1) \/ (known' = 1 /\ known_room' = 1 /\ pos' = 1))
+    /\ (~(home = 1 /\ known = 1 /\ known_room = 2) \/ (known' = 1 /\ known_room' = 2 /\ pos' = 2))
 
-z, yij, xijk = gr1.solve_streett_game(aut)
-# gr1.make_streett_transducer(z, yij, xijk, aut)
-# aut.varlist['sys1'].append('_goal')
-# # aut.varlist['sys2'].append('_goal')
-# aut.prime_varlists()
+    /\ (~(home = 0 /\ (pos = 2 /\ active != 2)) \/ (known' = 0 /\ known_room' = 0 /\ pos' = 1))
+    /\ (~(home = 0 /\ (pos = 1 /\ active != 1)) \/ (known' = 0 /\ known_room' = 0 /\ pos' = 2))
+    /\ ((turn = 0) => (UNCHANGED))
+    /\ (turn' != turn)
+    '''
+    aut.define(spec)
+    aut.init.update(
+        foo='FooInit',
+        bar='BarInit')
+    aut.action.update(
+        foo='FooNext',
+        bar='BarNext')
+    aut.win = dict(
+        foo={'<>[]': aut.bdds_from('active=1', 'active = 2', 'turn = 0', 'turn = 1'),
+             '[]<>': aut.bdds_from('active=1', 'active = 2')})
+    aut.qinit = r'\E \A'
+    aut.moore = True
+    aut.plus_one = True
+    return aut
 
-g1 = enum.action_to_steps(aut, 'scheduler', 'sys1', qinit=aut.qinit)
-g2 = enum.action_to_steps(aut, 'scheduler', 'sys2', qinit=aut.qinit)
-g3 = enum.action_to_steps(aut, 'scheduler', 'env', qinit=aut.qinit)
 
-h, _ = sym_enum._format_nx(g1)
-pd = nx.drawing.nx_pydot.to_pydot(h)
-pd.write_pdf('assembly1.pdf')
+def specify_component_bar():
+    """Return temporal logic spec of component bar."""
+    aut = trl.Automaton()
+    aut.players = ['foo', 'bar', 'scheduler']
+    aut.declare_variables(active=(1,2), home = (0,1),known_room=(0, 2), pos=(0, 2), known=(0,1), turn=(0, 1))
+    aut.varlist['scheduler'] = ['turn']
+    aut.varlist['foo']=['active']
+    aut.varlist['bar']=['known_room','known','pos','home']
+    spec = r'''
+    FooInit == active = 1
+    BarInit ==
+    /\ pos = 0
+    /\ home = 1
+    /\ known_room = 0
+    /\ known = 0
 
-h, _ = sym_enum._format_nx(g2)
-pd = nx.drawing.nx_pydot.to_pydot(h)
-pd.write_pdf('assembly2.pdf')
+    FooNext ==
+    /\ active \in 1..2
+    /\ active' \in 1..2
+    /\ (active' = active \/ active' != active)
+    /\ ((turn = 1) => (active' = active))
+    /\ (turn' != turn)
+    
+    UNCHANGED == 
+    /\ home' = home
+    /\ pos' = pos
+    /\ known' = known
+    /\ known_room' = known_room
 
-h, _ = sym_enum._format_nx(g3)
-pd = nx.drawing.nx_pydot.to_pydot(h)
-pd.write_pdf('assembly3.pdf')
+    BarNext ==
+    /\ (home = 1 => home' = 0)
+    /\ (home = 1 <=> pos = 0)
+    /\ (~(home = 0 /\ known' = 1) \/ home' = 1)
+    /\ (pos' != pos)
+
+    /\ (~(home = 0 /\ pos = 1 /\ active = 1) \/ (known' = 1 /\ known_room' = 1))
+    /\ (~(home = 0 /\ pos = 2 /\ active = 2) \/ (known' = 1 /\ known_room' = 2))
+
+    /\ (~(home = 1 /\ known = 1 /\ known_room = 1) \/ (known' = 1 /\ known_room' = 1 /\ pos' = 1))
+    /\ (~(home = 1 /\ known = 1 /\ known_room = 2) \/ (known' = 1 /\ known_room' = 2 /\ pos' = 2))
+
+    /\ (~(home = 0 /\ (pos = 2 /\ active != 2)) \/ (known' = 0 /\ known_room' = 0 /\ pos' = 1))
+    /\ (~(home = 0 /\ (pos = 1 /\ active != 1)) \/ (known' = 0 /\ known_room' = 0 /\ pos' = 2))
+    /\ ((turn != 1) => (UNCHANGED))
+    '''
+    aut.define(spec)
+    aut.init.update(
+        foo='FooInit',
+        bar='BarInit')
+    aut.action.update(
+        foo='FooNext',
+        bar='BarNext')
+    aut.win = dict(
+        bar={'<>[]': aut.bdds_from('pos = 0', 'turn = 0', 'turn = 1'),
+             '[]<>': aut.bdds_from('pos = 1', 'pos = 2')})
+    aut.qinit = r'\E \A'
+    aut.moore = True
+    aut.plus_one = True
+    return aut
+
+
+def synthesize_some_controller(env, sys, aut):
+    """Return a controller that implements the spec.
+
+    If no controller exists, then raise an `Exception`.
+    The returned controller is represented as a `networkx` graph.
+    """
+    aut.prime_varlists()
+    # vars
+    aut.varlist['env'] = aut.varlist[env] + aut.varlist['scheduler']
+    aut.varlist['sys'] = aut.varlist[sys]
+    # init
+    aut.init['env'] = aut.init[env]
+    aut.init['sys'] = aut.init[sys]
+    # actions
+    aut.action['env'] = aut.action[env]
+    aut.action['sys'] = aut.action[sys]
+    # win
+    aut.win['[]<>'] = aut.win[sys]['[]<>']
+    aut.win['<>[]'] = aut.win[sys]['<>[]']
+    z, yij, xijk = gr1.solve_streett_game(aut)
+    gr1.make_streett_transducer(z, yij, xijk, aut)
+    aut.varlist[sys].append('_goal')
+    aut.prime_varlists()
+
+
+def plot_machines(asm):
+    """Plot machine behaviors over a finite number of steps."""
+    nrows = len(asm.machines)
+    history = asm.past + [asm.state]
+    n_steps = len(history)  # missing last state
+    t = range(n_steps)
+    plt.subplots(nrows=nrows, ncols=1)
+    styles = ['b-o', 'r--', 'k-', 'g-*']  # def style picker
+    for i, (name, stm) in enumerate(asm.machines.items()):
+        plt.subplot(nrows, 1, i + 1)
+        plt.title(name)
+        styles_cp = list(styles)
+        # TODO: could instead plot only sys vars and memory
+        for var in stm.vars:
+            if stx.isprimed(var):
+                continue
+            x = [steps.omit_prefix(state, name)[var]
+                 for state in history]
+            style = styles_cp.pop()
+            plt.plot(t, x, style, label=var)
+        plt.legend()
+        plt.grid()
+
+
+if __name__ == '__main__':
+    main()
