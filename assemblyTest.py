@@ -21,7 +21,7 @@ def main():
     asm = steps.Assembly()
     asm.machines = dict(scheduler=sch, foo=foo, bar=bar)
     # history
-    n_steps = 15
+    n_steps = 20
     asm.init()
     print(asm.state)
     for _ in range(n_steps):
@@ -37,35 +37,36 @@ def specify_component_foo():
     """Return temporal logic spec of component foo."""
     aut = trl.Automaton()
     aut.players = ['foo', 'bar', 'scheduler']
-    aut.declare_variables(active=(1,2), home = (0,1),known_room=(0, 2), pos=(0, 2), known=(0,1), turn=(0, 1))
+    aut.declare_variables(active=(1, 2), home = (0,1),known_room=(0, 2), pos=(0, 2), known=(0,1), turn=(0, 1))
     aut.varlist['scheduler'] = ['turn']
-    aut.varlist['foo']=['active']
-    aut.varlist['bar']=['known_room','known','pos','home']
+    aut.varlist['foo'] = ['active']
+    aut.varlist['bar'] = ['known_room','known','pos','home']
     spec = r'''
     FooInit == active = 1
-    BarInit ==
+    BarInit == 
     /\ pos = 0
     /\ home = 1
-    /\ known_room = 0
-    /\ known = 0
+    /\ known_room = 1
+    /\ known = 1
     /\ turn = 1
 
-    FooNext ==
-    /\ active \in 1..2
-    /\ active' \in 1..2
-    /\ ((turn != 0) => (active' = active))
-    
-    UNCHANGED == 
+    INV ==
+    /\ pos \in 0..2
+    /\ known_room \in 0..2
+    /\ home \in 0..1
+    /\ known \in 0..1
+
+    BarUNCHANGED ==
     /\ home' = home
     /\ pos' = pos
     /\ known' = known
     /\ known_room' = known_room
 
-    BarNext ==
-    \/  /\ (home = 1 => home' = 0)
+    BarAction ==
+        /\ INV
+        /\ (home = 1 => home' = 0)
         /\ (home = 1 <=> pos = 0)
         /\ (~(home = 0 /\ known' = 1) \/ home' = 1)
-        /\ (pos' != pos)
 
         /\ (~(home = 0 /\ pos = 1 /\ active = 1) \/ (known' = 1 /\ known_room' = 1))
         /\ (~(home = 0 /\ pos = 2 /\ active = 2) \/ (known' = 1 /\ known_room' = 2))
@@ -75,8 +76,16 @@ def specify_component_foo():
 
         /\ (~(home = 0 /\ (pos = 2 /\ active != 2)) \/ (known' = 0 /\ known_room' = 0 /\ pos' = 1))
         /\ (~(home = 0 /\ (pos = 1 /\ active != 1)) \/ (known' = 0 /\ known_room' = 0 /\ pos' = 2))
-    \/  /\ ((turn = 0) => (UNCHANGED))
-        /\ (turn' != turn)
+    
+    FooNext ==
+        \/ ((turn = 1) /\ (active' = active))
+        \/  /\ (turn = 0 /\ active \in 1..2 /\ active' \in 1..2)
+            /\ (active' = active \/ active' != active) 
+
+    BarNext ==
+        \/ ((turn = 1) /\ (BarAction))
+        \/  /\ ((turn = 0) /\ (BarUNCHANGED))
+            /\ (turn' = 1)
     '''
     aut.define(spec)
     aut.init.update(
@@ -86,8 +95,8 @@ def specify_component_foo():
         foo='FooNext',
         bar='BarNext')
     aut.win = dict(
-        foo={'<>[]': aut.bdds_from('active=1', 'active = 2', 'turn = 0', 'turn = 1'),
-             '[]<>': aut.bdds_from('active=1', 'active = 2')})
+        foo={'<>[]': aut.bdds_from('turn = 0', 'turn = 1'),
+             '[]<>': aut.bdds_from('active=1','active=2')})
     aut.qinit = r'\E \A'
     aut.moore = True
     aut.plus_one = True
@@ -98,31 +107,53 @@ def specify_component_bar():
     """Return temporal logic spec of component bar."""
     aut = trl.Automaton()
     aut.players = ['foo', 'bar', 'scheduler']
-    aut.declare_variables(active=(1,2), home = (0,1),known_room=(0, 2), pos=(0, 2), known=(0,1), turn=(0, 1))
+    aut.declare_variables(active=(1, 2), home = (0,1),known_room=(0, 2), pos=(0, 2), known=(0,1), turn=(0, 1))
     aut.varlist['scheduler'] = ['turn']
-    aut.varlist['foo']=['active']
-    aut.varlist['bar']=['known_room','known','pos','home']
+    aut.varlist['foo'] = ['active']
+    aut.varlist['bar'] = ['known_room','known','pos','home']
     spec = r'''
     FooInit == active = 1 /\ turn = 1
     BarInit ==
     /\ pos = 0
     /\ home = 1
-    /\ known_room = 0
-    /\ known = 0
+    /\ known_room = 1
+    /\ known = 1
 
-    FooNext ==
-    /\ active \in 1..2
-    /\ active' \in 1..2
-    /\ ((turn = 1) => (active' = active))
-    /\ (turn' != turn)
-    
-    UNCHANGED == 
+    INV ==
+    /\ pos \in 0..2
+    /\ known_room \in 0..2
+    /\ home \in 0..1
+    /\ known \in 0..1
+
+    BarUNCHANGED ==
     /\ home' = home
     /\ pos' = pos
     /\ known' = known
     /\ known_room' = known_room
 
-    BarNext == ((turn = 0) => (UNCHANGED))
+    BarAction ==
+        /\ INV
+        /\ (home = 1 => home' = 0)
+        /\ (home = 1 <=> pos = 0)
+        /\ (~(home = 0 /\ known' = 1) \/ home' = 1)
+
+        /\ (~(home = 0 /\ pos = 1 /\ active = 1) \/ (known' = 1 /\ known_room' = 1))
+        /\ (~(home = 0 /\ pos = 2 /\ active = 2) \/ (known' = 1 /\ known_room' = 2))
+
+        /\ (~(home = 1 /\ known = 1 /\ known_room = 1) \/ (known' = 1 /\ known_room' = 1 /\ pos' = 1))
+        /\ (~(home = 1 /\ known = 1 /\ known_room = 2) \/ (known' = 1 /\ known_room' = 2 /\ pos' = 2))
+
+        /\ (~(home = 0 /\ (pos = 2 /\ active != 2)) \/ (known' = 0 /\ known_room' = 0 /\ pos' = 1))
+        /\ (~(home = 0 /\ (pos = 1 /\ active != 1)) \/ (known' = 0 /\ known_room' = 0 /\ pos' = 2))
+
+    FooNext ==
+        \/  /\ (turn = 0 /\ active \in 1..2 /\ active' \in 1..2)
+            /\ (active' = active \/ active' != active) 
+        \/  /\ ((turn = 1) /\ (active' = active))
+            /\ (turn' = 0)
+    BarNext ==
+        \/ ((turn = 0) /\ (BarUNCHANGED))
+        \/ ((turn = 1) /\ (BarAction))
     '''
     aut.define(spec)
     aut.init.update(
@@ -132,8 +163,8 @@ def specify_component_bar():
         foo='FooNext',
         bar='BarNext')
     aut.win = dict(
-        bar={'<>[]': aut.bdds_from('pos = 0', 'turn = 0', 'turn = 1'),
-             '[]<>': aut.bdds_from('pos = 1', 'pos = 2')})
+        bar={'<>[]': aut.bdds_from('turn = 0', 'turn = 1'),
+             '[]<>': aut.bdds_from('TRUE')})
     aut.qinit = r'\E \A'
     aut.moore = True
     aut.plus_one = True
