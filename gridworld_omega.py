@@ -51,32 +51,31 @@ aut.init['sys'] = '''
 aut.action['env'] = '''
     /\ (envX \in 0..2 /\ envY \in 0..2)
     /\ (envX' \in 0..2 /\ envY' \in 0..2)
-    /\ envX' != envX /\ envY' != envY
 
-    /\ envX = 0 => (envX' = 0 \/ envX' = 1)
-    /\ envX = 1 => (envX' = 0 \/ envX' = 1 \/ envX' = 2)
-    /\ envX = 2 => (envX' = 1 \/ envX' = 2)
+    /\ \/ ((envX = 0) /\ (envX' = 1))
+       \/ ((envX = 1) /\ (envX' = 0 \/ envX' = 2))
+       \/ ((envX = 2) /\ (envX' = 1))
 
-    /\ envY = 0 => (envY' = 0 \/ envY' = 1)
-    /\ envY = 1 => (envY' = 0 \/ envY' = 1 \/ envY' = 2)
-    /\ envY = 2 => (envY' = 1 \/ envY' = 2)
+    /\ \/ ((envY = 0) /\ (envY' = 1))
+       \/ ((envY = 1) /\ (envY' = 0 \/ envY' = 2))
+       \/ ((envY = 2) /\ (envY' = 1))
     '''
 aut.action['sys'] = '''
     /\ (sysX \in 0..2 /\ sysY \in 0..2)
     /\ (sysX' \in 0..2 /\ sysY' \in 0..2)
 
-    /\ \/ ((sysX = 0) /\ (sysX' = 0 \/ sysX' = 1))
-       \/ ((sysX = 1) /\ (sysX' = 0 \/ sysX' = 1 \/ sysX' = 2))
-       \/ ((sysX = 2) /\ (sysX' = 1 \/ sysX' = 2))
+    /\ ((sysX = 0) => (sysX' = 1))
+    /\ ((sysX = 1) => (sysX' = 0 \/ sysX' = 2))
+    /\ ((sysX = 2) => (sysX' = 1))
 
-    /\ \/ ((sysY = 0) /\ (sysY' = 0 \/ sysY' = 1))
-       \/ ((sysY = 1) /\ (sysY' = 0 \/ sysY' = 1 \/ sysY' = 2))
-       \/ ((sysY = 2) /\ (sysY' = 1 \/ sysY' = 2))
+    /\ ((sysY = 0) => (sysY' = 1))
+    /\ ((sysY = 1) => (sysY' = 0 \/ sysY' = 2))
+    /\ ((sysY = 2) => (sysY' = 1))
     '''
 
 
-aut.win['<>[]'] = aut.bdds_from('TRUE')
-aut.win['[]<>'] = aut.bdds_from('TRUE')
+aut.win['<>[]'] = aut.bdds_from('sysX=2 /\ sysY=2','sysX=0 /\ sysY=0')
+aut.win['[]<>'] = aut.bdds_from('sysX=2 /\ sysY=2','sysX=0 /\ sysY=0')
 aut.qinit = '\E \A'
 aut.moore = True
 aut.plus_one = True
