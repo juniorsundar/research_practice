@@ -73,6 +73,46 @@ aut.action['sys'] = '''
     /\ ((sysY = 2) => (sysY' = 1))
     '''
 
+specs = '''
+Aroom1 == envX = 2 /\ envY = 0
+Aroom2 == envX = 0 /\ envY = 2
+room1 == sysX = 2 /\ sysY = 0
+room2 == sysX = 0 /\ sysY = 2
+home == sysX = 0 /\ sysY = 0
+Kroom1 == kX = 2 /\ kY = 0
+Kroom2 == kX = 0 /\ kY = 2
+Khome == kX = 0 /\ kY = 0
+
+right == sysX' = sysX + 1
+left == sysX' = sysX - 1
+up == sysY' = sysY + 1
+down == sysY' = sysY - 1
+
+nonStuttering == (sysX' != sysX /\ sysY' != sysY)
+
+travelling == ~ (home \/ room1 \/ room2)
+
+sysGOTOR1 ==
+    /\ ((2 > sysX) => right)  
+    /\ ((0 < sysY) => down)
+
+sysGOTOR2 ==
+    /\ ((0 < sysX) => left)  
+    /\ ((2 > sysY) => up)
+
+sysGOHOME ==
+    /\ ((sysX > 0) => left)  
+    /\ ((sysY > 0) => down)
+
+sysStep ==
+    /\ nonStuttering
+    /\ (k = 1 /\ Kroom1 /\ (travelling \/ home)) => (k' = 1 /\ kX' = kX /\ kY' = kY)
+    /\ (k = 1 /\ Kroom2 /\ (travelling \/ home)) => (k' = 1 /\ kX' = kX /\ kY' = kY)
+    /\ (Aroom1 /\ room1) => (k' = 1 /\ kX' = 2 /\ kY' = 0)
+    /\ (Aroom2 /\ room2) => (k' = 1 /\ kX' = 0 /\ kY' = 2) 
+    /\ Kroom1 => sysGOTOR1
+    /\ kroom2 => sysGOTOR2
+'''
 
 aut.win['<>[]'] = aut.bdds_from('sysX=2 /\ sysY=2','sysX=0 /\ sysY=0')
 aut.win['[]<>'] = aut.bdds_from('sysX=2 /\ sysY=2','sysX=0 /\ sysY=0')
