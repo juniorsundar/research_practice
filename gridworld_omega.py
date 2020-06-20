@@ -35,87 +35,86 @@ y = 2 => (y' = 1 \/ y' = 2)
 '''
 
 aut = trl.Automaton()
-aut.declare_variables(sysX=(0,2), sysY = (0,2), envX=(0, 2), envY=(0, 2))
-aut.varlist['env']=['envX','envY']
-aut.varlist['sys']=['sysX','sysY']
+aut.declare_variables(sysX=(0,2), sysY = (0,2), active=(1, 2), k = (0,1), goTo = (0,2), kR = (0,2))
+aut.varlist['env']=['active']
+aut.varlist['sys']=['sysX','sysY','k','kR','goTo']
 aut.prime_varlists()
 
-aut.init['env'] = '''
-    /\ envX = 2
-    /\ envY = 2
-    '''
-aut.init['sys'] = '''
-    /\ sysX = 0
-    /\ sysY = 0
-    '''
-aut.action['env'] = '''
-    /\ (envX \in 0..2 /\ envY \in 0..2)
-    /\ (envX' \in 0..2 /\ envY' \in 0..2)
-
-    /\ \/ ((envX = 0) /\ (envX' = 1))
-       \/ ((envX = 1) /\ (envX' = 0 \/ envX' = 2))
-       \/ ((envX = 2) /\ (envX' = 1))
-
-    /\ \/ ((envY = 0) /\ (envY' = 1))
-       \/ ((envY = 1) /\ (envY' = 0 \/ envY' = 2))
-       \/ ((envY = 2) /\ (envY' = 1))
-    '''
-aut.action['sys'] = '''
-    /\ (sysX \in 0..2 /\ sysY \in 0..2)
-    /\ (sysX' \in 0..2 /\ sysY' \in 0..2)
-
-    /\ ((sysX = 0) => (sysX' = 1))
-    /\ ((sysX = 1) => (sysX' = 0 \/ sysX' = 2))
-    /\ ((sysX = 2) => (sysX' = 1))
-
-    /\ ((sysY = 0) => (sysY' = 1))
-    /\ ((sysY = 1) => (sysY' = 0 \/ sysY' = 2))
-    /\ ((sysY = 2) => (sysY' = 1))
-    '''
-
 specs = '''
-Aroom1 == envX = 2 /\ envY = 0
-Aroom2 == envX = 0 /\ envY = 2
-room1 == sysX = 2 /\ sysY = 0
-room2 == sysX = 0 /\ sysY = 2
-home == sysX = 0 /\ sysY = 0
-Kroom1 == kX = 2 /\ kY = 0
-Kroom2 == kX = 0 /\ kY = 2
-Khome == kX = 0 /\ kY = 0
+envInit ==
+    /\ active = 1
 
-right == sysX' = sysX + 1
+envNext ==
+    /\ (active \in 1..2 /\ active' \in 1..2)
+    /\ (active' = active \/ active' != active)
+
 left == sysX' = sysX - 1
+right == sysX' = sysX + 1
 up == sysY' = sysY + 1
 down == sysY' = sysY - 1
 
-nonStuttering == (sysX' != sysX /\ sysY' != sysY)
+home == 
+    /\ sysX = 0
+    /\ sysY = 0
 
-travelling == ~ (home \/ room1 \/ room2)
+room1 == 
+    /\ sysX = 2
+    /\ sysY = 0
+room2 == 
+    /\ sysX = 0
+    /\ sysY = 2
 
-sysGOTOR1 ==
-    /\ ((2 > sysX) => right)  
-    /\ ((0 < sysY) => down)
+goTOR1 ==
+    /\ ((sysX < 2) => (right))
+    /\ ((sysY > 0) => (down))
 
-sysGOTOR2 ==
-    /\ ((0 < sysX) => left)  
-    /\ ((2 > sysY) => up)
+goTOR2 ==
+    /\ ((sysX > 0) => (left))
+    /\ ((sysY < 2) => (up))
 
-sysGOHOME ==
-    /\ ((sysX > 0) => left)  
-    /\ ((sysY > 0) => down)
+goTOHOME ==
+    /\ ((sysX > 0) => (left))
+    /\ ((sysY > 0) => (down))
 
-sysStep ==
-    /\ nonStuttering
-    /\ (k = 1 /\ Kroom1 /\ (travelling \/ home)) => (k' = 1 /\ kX' = kX /\ kY' = kY)
-    /\ (k = 1 /\ Kroom2 /\ (travelling \/ home)) => (k' = 1 /\ kX' = kX /\ kY' = kY)
-    /\ (Aroom1 /\ room1) => (k' = 1 /\ kX' = 2 /\ kY' = 0)
-    /\ (Aroom2 /\ room2) => (k' = 1 /\ kX' = 0 /\ kY' = 2) 
-    /\ Kroom1 => sysGOTOR1
-    /\ kroom2 => sysGOTOR2
+sysInit ==
+    /\ sysX = 0 /\ sysY = 0
+    /\ k = 0 /\ goTo = 0 /\ kR = 0
+
+sysNext ==
+    /\ goTo = 0 => goTOHOME
+    /\ goTo = 1 => goTOR1
+    /\ goTo = 2 => goTOR2
+
+    /\ ((home /\ k = 1 /\ kR = 2) => (goTo' = 2 /\ k' = 1 /\ kR' = 2))
+    /\ ((home /\ k = 1 /\ kR = 1) => (goTo' = 1 /\ k' = 1 /\ kR' = 1))
+    /\ ((home /\ k = 0 /\ kR = 0) => (goTo' = 1 /\ k' = 0 /\ kR' = 0))
+
+    /\ ((sysX != 2 /\ sysY != 0 /\ k = 1 /\ kR = 1 /\ goTo = 1) => (goTo' = 1 /\ k' = 1 /\ kR' = 1))
+    /\ ((sysX != 0 /\ sysY != 2 /\ k = 1 /\ kR = 2 /\ goTo = 2) => (goTo' = 2 /\ k' = 1 /\ kR' = 2))
+    /\ ((sysX != 0 /\ sysY != 0 /\ k = 1 /\ kR = 1 /\ goTo = 0) => (goTo' = 0 /\ k' = 1 /\ kR' = 1))
+    /\ ((sysX != 0 /\ sysY != 0 /\ k = 1 /\ kR = 2 /\ goTo = 0) => (goTo' = 0 /\ k' = 1 /\ kR' = 2))
+
+    /\ ((k = 0 /\ kR = 0 /\ goTo = 1) => (k' = 0 /\ kR' = 0 /\ goTo' = 1))
+    /\ ((k = 0 /\ kR = 0 /\ goTo = 2) => (k' = 0 /\ kR' = 0 /\ goTo' = 2))
+    /\ ((k = 0 /\ kR = 0 /\ goTo = 0) => (k' = 0 /\ kR' = 0 /\ goTo' = 0))
+
+    /\ ((room1 /\ active = 1) => (k' = 1 /\ kR' = 1 /\ goTo' = 0))
+    /\ ((room2 /\ active = 2) => (k' = 1 /\ kR' = 2 /\ goTo' = 0))
+
+    /\ ((room1 /\ active != 1) => (k' = 0 /\ kR' = 0 /\ goTo' = 2))
+    /\ ((room2 /\ active != 2) => (k' = 0 /\ kR' = 0 /\ goTo' = 1))
+
 '''
 
-aut.win['<>[]'] = aut.bdds_from('sysX=2 /\ sysY=2','sysX=0 /\ sysY=0')
-aut.win['[]<>'] = aut.bdds_from('sysX=2 /\ sysY=2','sysX=0 /\ sysY=0')
+aut.define(specs)
+aut.init.update(
+    env='envInit',
+    sys='sysInit')
+aut.action.update(
+    env='envNext',
+    sys='sysNext')
+aut.win['<>[]'] = aut.bdds_from('TRUE')
+aut.win['[]<>'] = aut.bdds_from('TRUE')
 aut.qinit = '\E \A'
 aut.moore = True
 aut.plus_one = True
