@@ -48,10 +48,14 @@ envNext ==
     /\ (active \in 1..2 /\ active' \in 1..2)
     /\ (active' = active \/ active' != active)
 
-left == sysX' = sysX - 1
-right == sysX' = sysX + 1
-up == sysY' = sysY + 1
-down == sysY' = sysY - 1
+stat == (sysX' = sysX /\ sysY' = sysY)
+
+dynamics == 
+    /\ (sysX \in 0..2 /\ sysY \in 0..2)
+    /\ (sysX' \in 0..2 /\ sysY' \in 0..2)
+
+    /\ (((sysX' - sysX) < 2) /\ ((sysX' - sysX) > -2))
+    /\ (((sysY' - sysY) < 2) /\ ((sysY' - sysY) > -2))
 
 home == 
     /\ sysX = 0
@@ -60,50 +64,50 @@ home ==
 room1 == 
     /\ sysX = 2
     /\ sysY = 0
+
 room2 == 
     /\ sysX = 0
     /\ sysY = 2
 
 goTOR1 ==
-    /\ ((sysX < 2) => (right))
-    /\ ((sysY > 0) => (down))
+    /\ ((sysX < 2) => (sysX' = sysX + 1))
+    /\ ((sysY > 0) => (sysY' = sysY - 1))
 
 goTOR2 ==
-    /\ ((sysX > 0) => (left))
-    /\ ((sysY < 2) => (up))
+    /\ ((sysX > 0) => (sysX' = sysX - 1))
+    /\ ((sysY < 2) => (sysY' = sysY + 1))
 
 goTOHOME ==
-    /\ ((sysX > 0) => (left))
-    /\ ((sysY > 0) => (down))
+    /\ ((sysX > 0) => (sysX' = sysX - 1))
+    /\ ((sysY > 0) => (sysY' = sysY - 1))
 
 sysInit ==
-    /\ sysX = 0 /\ sysY = 0
-    /\ k = 0 /\ goTo = 0 /\ kR = 0
+    /\ sysX = 0
+    /\ sysY = 0
+    /\ k = 1
+    /\ goTo = 0
+    /\ kR = 2
 
 sysNext ==
-    /\ goTo = 0 => goTOHOME
-    /\ goTo = 1 => goTOR1
-    /\ goTo = 2 => goTOR2
+    /\ dynamics
+    /\ ((goTo = 0) => (goTOHOME))
+    /\ ((goTo = 1) => (goTOR1))
+    /\ ((goTo = 2) => (goTOR2))
 
-    /\ ((home /\ k = 1 /\ kR = 2) => (goTo' = 2 /\ k' = 1 /\ kR' = 2))
-    /\ ((home /\ k = 1 /\ kR = 1) => (goTo' = 1 /\ k' = 1 /\ kR' = 1))
-    /\ ((home /\ k = 0 /\ kR = 0) => (goTo' = 1 /\ k' = 0 /\ kR' = 0))
+    /\ ((home /\ (goTo = 1 \/ goTo = 2)) => (k' = k /\ kR' = kR /\ goTo' = goTo))
+    /\ ((home /\ k = 1 /\ (kR = 1 \/ kR = 2) /\ goTo = 0) => (stat /\ k' = k /\ kR' = kR /\ goTo' = kR))
 
-    /\ ((sysX != 2 /\ sysY != 0 /\ k = 1 /\ kR = 1 /\ goTo = 1) => (goTo' = 1 /\ k' = 1 /\ kR' = 1))
-    /\ ((sysX != 0 /\ sysY != 2 /\ k = 1 /\ kR = 2 /\ goTo = 2) => (goTo' = 2 /\ k' = 1 /\ kR' = 2))
-    /\ ((sysX != 0 /\ sysY != 0 /\ k = 1 /\ kR = 1 /\ goTo = 0) => (goTo' = 0 /\ k' = 1 /\ kR' = 1))
-    /\ ((sysX != 0 /\ sysY != 0 /\ k = 1 /\ kR = 2 /\ goTo = 0) => (goTo' = 0 /\ k' = 1 /\ kR' = 2))
+    /\ (((~home /\ ~room1 /\ ~room2)) => (k' = k /\ goTo' = goTo /\ kR' = kR))
 
-    /\ ((k = 0 /\ kR = 0 /\ goTo = 1) => (k' = 0 /\ kR' = 0 /\ goTo' = 1))
-    /\ ((k = 0 /\ kR = 0 /\ goTo = 2) => (k' = 0 /\ kR' = 0 /\ goTo' = 2))
-    /\ ((k = 0 /\ kR = 0 /\ goTo = 0) => (k' = 0 /\ kR' = 0 /\ goTo' = 0))
+    /\ ((room2 /\ active = 2 /\ goTo = 2) => (stat /\ k' = 1 /\ kR' = 2 /\ goTo' = 0))
+    /\ ((room2 /\ goTo = 0) => (k' = 1 /\ kR' = 2 /\ goTo' = 0))
+    /\ ((room2 /\ active != 2 /\ goTo = 2) => (stat /\ k' = 0 /\ kR' = 0 /\ goTo' = 1))
+    /\ ((room2 /\ goTo = 1) => (k' = 0 /\ kR' = 0 /\ goTo' = 1))
 
-    /\ ((room1 /\ active = 1) => (k' = 1 /\ kR' = 1 /\ goTo' = 0))
-    /\ ((room2 /\ active = 2) => (k' = 1 /\ kR' = 2 /\ goTo' = 0))
-
-    /\ ((room1 /\ active != 1) => (k' = 0 /\ kR' = 0 /\ goTo' = 2))
-    /\ ((room2 /\ active != 2) => (k' = 0 /\ kR' = 0 /\ goTo' = 1))
-
+    /\ ((room1 /\ active = 1 /\ goTo = 1) => (stat /\ k' = 1 /\ kR' = 1 /\ goTo' = 0))
+    /\ ((room1 /\ goTo = 0) => (k' = 1 /\ kR' = 1 /\ goTo' = 0))
+    /\ ((room1 /\ active != 1 /\ goTo = 1) => (stat /\ k' = 0 /\ kR' = 0 /\ goTo' = 2))
+    /\ ((room1 /\ goTo = 2) => (k' = 0 /\ kR' = 0 /\ goTo' = 2))
 '''
 
 aut.define(specs)
@@ -114,7 +118,7 @@ aut.action.update(
     env='envNext',
     sys='sysNext')
 aut.win['<>[]'] = aut.bdds_from('TRUE')
-aut.win['[]<>'] = aut.bdds_from('TRUE')
+aut.win['[]<>'] = aut.bdds_from('sysX = 0 /\ sysY = 0')
 aut.qinit = '\E \A'
 aut.moore = True
 aut.plus_one = True
@@ -128,3 +132,23 @@ g = enum.action_to_steps(aut, 'env', 'impl', qinit=aut.qinit)
 h, _ = sym_enum._format_nx(g)
 pd = nx.drawing.nx_pydot.to_pydot(h)
 pd.write_pdf('game_states_omega.pdf')
+
+
+
+    # /\ (~(home /\ k = 1 /\ kR = 1 /\ goTo = 0) \/ (k' = 1 /\ kR' = 1 /\ sysX' = 0 /\ sysY' = 0 /\ goTo' = 1))
+    # /\ (~(home /\ k = 1 /\ kR = 2 /\ goTo = 0) \/ (k' = 1 /\ kR' = 2 /\ sysX' = 0 /\ sysY' = 0 /\ goTo' = 2))
+
+
+    # /\ (~(k = 1 /\ kR = 1 /\ goTo = 0) \/ (k' = 1 /\ kR' = 1 /\ goTo' = 0))
+    # /\ (~(k = 1 /\ kR = 2 /\ goTo = 0) \/ (k' = 1 /\ kR' = 2 /\ goTo' = 0))
+    # /\ (~(k = 0 /\ kR = 0 /\ goTo = 0) \/ (k' = 1 /\ kR' = 2 /\ goTo' = 0))
+
+    # /\ (~(~room1 /\ k = 0 /\ kR = 0 /\ goTo = 1) \/ (k' = 0 /\ kR' = 0 /\ goTo' = 1))
+    # /\ (~(~room2 /\ k = 0 /\ kR = 0 /\ goTo = 2) \/ (k' = 0 /\ kR' = 0 /\ goTo' = 2))
+    # /\ (~(~home /\ k = 0 /\ kR = 0 /\ goTo = 0) \/ (k' = 0 /\ kR' = 0 /\ goTo' = 0))
+
+    # /\ (~(room1 /\ active = 1 /\ k = 0 /\ kR = 0 /\ goTo = 1) \/ (sysX' = 2 /\ sysY' = 0 /\ k' = 1 /\ kR' = 1 /\ goTo' = 0))
+    # /\ (~(room1 /\ active != 1 /\ k = 0 /\ kR = 0 /\ goTo = 1) \/ (sysX' = 2 /\ sysY' = 0 /\ k' = 0 /\ kR' = 0 /\ goTo' = 2))
+
+    # /\ (~(room2 /\ active = 2 /\ k = 0 /\ kR = 0 /\ goTo = 2) \/ (sysX' = 0 /\ sysY' = 2 /\ k' = 1 /\ kR' = 2 /\ goTo' = 0))
+    # /\ (~(room2 /\ active != 2 /\ k = 0 /\ kR = 0 /\ goTo = 2) \/ (sysX' = 0 /\ sysY' = 2 /\ k' = 0 /\ kR' = 0 /\ goTo' = 1))
