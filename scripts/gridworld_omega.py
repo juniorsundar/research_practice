@@ -132,23 +132,3 @@ g = enum.action_to_steps(aut, 'env', 'impl', qinit=aut.qinit)
 h, _ = sym_enum._format_nx(g)
 pd = nx.drawing.nx_pydot.to_pydot(h)
 pd.write_pdf('game_states_omega.pdf')
-
-
-
-    # /\ (~(home /\ k = 1 /\ kR = 1 /\ goTo = 0) \/ (k' = 1 /\ kR' = 1 /\ sysX' = 0 /\ sysY' = 0 /\ goTo' = 1))
-    # /\ (~(home /\ k = 1 /\ kR = 2 /\ goTo = 0) \/ (k' = 1 /\ kR' = 2 /\ sysX' = 0 /\ sysY' = 0 /\ goTo' = 2))
-
-
-    # /\ (~(k = 1 /\ kR = 1 /\ goTo = 0) \/ (k' = 1 /\ kR' = 1 /\ goTo' = 0))
-    # /\ (~(k = 1 /\ kR = 2 /\ goTo = 0) \/ (k' = 1 /\ kR' = 2 /\ goTo' = 0))
-    # /\ (~(k = 0 /\ kR = 0 /\ goTo = 0) \/ (k' = 1 /\ kR' = 2 /\ goTo' = 0))
-
-    # /\ (~(~room1 /\ k = 0 /\ kR = 0 /\ goTo = 1) \/ (k' = 0 /\ kR' = 0 /\ goTo' = 1))
-    # /\ (~(~room2 /\ k = 0 /\ kR = 0 /\ goTo = 2) \/ (k' = 0 /\ kR' = 0 /\ goTo' = 2))
-    # /\ (~(~home /\ k = 0 /\ kR = 0 /\ goTo = 0) \/ (k' = 0 /\ kR' = 0 /\ goTo' = 0))
-
-    # /\ (~(room1 /\ active = 1 /\ k = 0 /\ kR = 0 /\ goTo = 1) \/ (sysX' = 2 /\ sysY' = 0 /\ k' = 1 /\ kR' = 1 /\ goTo' = 0))
-    # /\ (~(room1 /\ active != 1 /\ k = 0 /\ kR = 0 /\ goTo = 1) \/ (sysX' = 2 /\ sysY' = 0 /\ k' = 0 /\ kR' = 0 /\ goTo' = 2))
-
-    # /\ (~(room2 /\ active = 2 /\ k = 0 /\ kR = 0 /\ goTo = 2) \/ (sysX' = 0 /\ sysY' = 2 /\ k' = 1 /\ kR' = 2 /\ goTo' = 0))
-    # /\ (~(room2 /\ active != 2 /\ k = 0 /\ kR = 0 /\ goTo = 2) \/ (sysX' = 0 /\ sysY' = 2 /\ k' = 0 /\ kR' = 0 /\ goTo' = 1))
