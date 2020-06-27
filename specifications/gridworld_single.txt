@@ -1,0 +1,67 @@
+envInit ==
+    /\ active = 1
+
+envNext ==
+    /\ (active \in 1..2 /\ active' \in 1..2)
+    /\ (active' = active \/ active' != active) 
+
+stat == (sysX' = sysX /\ sysY' = sysY)
+
+dynamics == 
+    /\ (sysX \in 0..2 /\ sysY \in 0..2)
+    /\ (sysX' \in 0..2 /\ sysY' \in 0..2)
+
+    /\ (((sysX' - sysX) < 2) /\ ((sysX' - sysX) > -2))
+    /\ (((sysY' - sysY) < 2) /\ ((sysY' - sysY) > -2))
+
+home == 
+    /\ sysX = 0
+    /\ sysY = 0
+
+room1 == 
+    /\ sysX = 2
+    /\ sysY = 0
+
+room2 == 
+    /\ sysX = 0
+    /\ sysY = 2
+
+goTOR1 ==
+    /\ ((sysX < 2) => (sysX' = sysX + 1))
+    /\ ((sysY > 0) => (sysY' = sysY - 1))
+
+goTOR2 ==
+    /\ ((sysX > 0) => (sysX' = sysX - 1))
+    /\ ((sysY < 2) => (sysY' = sysY + 1))
+
+goTOHOME ==
+    /\ ((sysX > 0) => (sysX' = sysX - 1))
+    /\ ((sysY > 0) => (sysY' = sysY - 1))
+
+sysInit ==
+    /\ sysX = 0
+    /\ sysY = 0
+    /\ k = 1
+    /\ goTo = 0
+    /\ kR = 2
+
+sysNext ==
+    /\ dynamics
+    /\ ((goTo = 0) => (goTOHOME))
+    /\ ((goTo = 1) => (goTOR1))
+    /\ ((goTo = 2) => (goTOR2))
+
+    /\ ((home /\ (goTo = 1 \/ goTo = 2)) => (k' = k /\ kR' = kR /\ goTo' = goTo))
+    /\ ((home /\ k = 1 /\ (kR = 1 \/ kR = 2) /\ goTo = 0) => (stat /\ k' = k /\ kR' = kR /\ goTo' = kR))
+
+    /\ (((~home /\ ~room1 /\ ~room2)) => (k' = k /\ goTo' = goTo /\ kR' = kR))
+
+    /\ ((room2 /\ active = 2 /\ goTo = 2) => (stat /\ k' = 1 /\ kR' = 2 /\ goTo' = 0))
+    /\ ((room2 /\ goTo = 0) => (k' = 1 /\ kR' = 2 /\ goTo' = 0))
+    /\ ((room2 /\ active != 2 /\ goTo = 2) => (stat /\ k' = 0 /\ kR' = 0 /\ goTo' = 1))
+    /\ ((room2 /\ goTo = 1) => (k' = 0 /\ kR' = 0 /\ goTo' = 1))
+
+    /\ ((room1 /\ active = 1 /\ goTo = 1) => (stat /\ k' = 1 /\ kR' = 1 /\ goTo' = 0))
+    /\ ((room1 /\ goTo = 0) => (k' = 1 /\ kR' = 1 /\ goTo' = 0))
+    /\ ((room1 /\ active != 1 /\ goTo = 1) => (stat /\ k' = 0 /\ kR' = 0 /\ goTo' = 2))
+    /\ ((room1 /\ goTo = 2) => (k' = 0 /\ kR' = 0 /\ goTo' = 2))
