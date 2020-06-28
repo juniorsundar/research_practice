@@ -1,0 +1,10 @@
+room            -1..2
+goTo             0..2
+known            0..1
+known_room       0..2
+
+active           0..2
+
+
+(room = -1) => (room' = 1 \/ room' = 2 \/ room' = 0)
+(room = 2 \/ room = 1 \/ room = 0) => (room' = -1)
