@@ -120,7 +120,7 @@ sysInit2 ==
     /\ sysY2 = 0
     /\ k2 = 1
     /\ goTo2 = 0
-    /\ kR2 = 2
+    /\ kR2 = 1
 
 sysStep2 ==
     /\ dynamics2
