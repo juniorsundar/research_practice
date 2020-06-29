@@ -18,6 +18,7 @@ sys_action ==
 /\ (known_room \in 0..2 /\ known_room' \in 0..2)
 
 /\ ((room = 0 /\ known = 1 /\ known_room != 0) => (room' = -1 /\ goTo' = known_room /\ known' = known /\ known_room' = known_room))
+
 /\ ((room = -1 /\ known = 1 /\ known_room != 0) => (room' = goTo /\ known' = known /\ known_room' = known_room /\ goTo' = 0))
 /\ ((room = -1 /\ known = 0 /\ known_room = 0) => (room' = goTo /\ known' = known /\ known_room' = known_room /\ goTo' = 0))
 
