@@ -19,7 +19,7 @@ sys_action ==
 
 /\ ((room = 0 /\ known = 1 /\ known_room != 0) => (room' = -1 /\ goTo' = known_room /\ known' = known /\ known_room' = known_room))
 /\ ((room = -1 /\ known = 1 /\ known_room != 0) => (room' = goTo /\ known' = known /\ known_room' = known_room /\ goTo' = 0))
-/\ ((room = -1 /\ known = 0 /\ known_room = 0) => (room' = goTo /\ known' = known /\ known_room' = known_room /\ goTo' = 0))
+/\ ((room = -1 /\ known = 0 /\ known_room = 0) => ((room' = goTo \/ room' = -1) /\ goTo' = 0))
 
 /\ ((room = 1 /\ active = 1) => (known' = 1 /\ known_room' = 1 /\ goTo' = 0 /\ room' = -1))
 /\ ((room = 1 /\ active != 1) => (known' = 0 /\ known_room' = 0 /\ goTo' = 2 /\ room' = -1))
