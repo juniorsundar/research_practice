@@ -158,12 +158,12 @@ def main(aut):
     sys_player = 'environment'
     vrs = ['pos1','goTo1','pos2','goTo2']
     _closure.hide_vars_from_sys(vrs, inv, sys_player, aut)
-    sys_player = 'rob1'
-    vrs = ['pos2','goTo2']
-    _closure.hide_vars_from_sys(vrs, inv, sys_player, aut)
-    sys_player = 'rob2'
-    vrs = ['pos1','goTo1']
-    _closure.hide_vars_from_sys(vrs, inv, sys_player, aut)
+    # sys_player = 'rob1'
+    # vrs = ['pos2','goTo2']
+    # _closure.hide_vars_from_sys(vrs, inv, sys_player, aut)
+    # sys_player = 'rob2'
+    # vrs = ['pos1','goTo1']
+    # _closure.hide_vars_from_sys(vrs, inv, sys_player, aut)
 
     sys_player = 'environment'
     players = ['environment', 'rob1', 'rob2']
