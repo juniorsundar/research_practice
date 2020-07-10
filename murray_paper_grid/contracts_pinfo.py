@@ -156,7 +156,7 @@ def main(aut):
     # players = ['autopilot', 'gear_module', 'door_module']
     
     sys_player = 'environment'
-    vrs = ['room1','room2']
+    vrs = ['active']
     _closure.hide_vars_from_sys(vrs, inv, sys_player, aut)
     # sys_player = 'rob1'
     # vrs = ['pos2','goTo2']
@@ -166,7 +166,7 @@ def main(aut):
     # _closure.hide_vars_from_sys(vrs, inv, sys_player, aut)
 
     sys_player = 'environment'
-    players = ['environment', 'rob1', 'rob2']
+    players = ['environment', 'rob1','rob2']
 
     aut.global_inv = inv  # global full-info invariant
     aut_unzipped = _closure.unzip(inv, aut.players, aut)

@@ -1,0 +1,8 @@
+I think the issue here is that the bee 'swarm' we're trying to work with
+doesn't really work like a traditional robotic swarm, in which you provide goals that need to be
+accomplished as a cohesive unit (akin to centralised swarms).
+Rather, each bee is an independent robot that also operates independently until it is recruited.
+
+So I feel like for this, rather than focusing on decomposition, we should look at the interaction between the bees.
+The bees are triggered by an event (either proximity to another bee, or to the foraging site) which changes their state.
+And during the trigger, the bees either synchronise with the other bee or internally.
